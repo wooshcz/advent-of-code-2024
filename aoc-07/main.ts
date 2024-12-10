@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs'
 
 const file = readFileSync('./input.txt', 'utf-8').trim()
 const lines = file.split('\n')
-const enum Operator { Plus, Times }
+const enum Operator { Plus, Times, Concat }
 
-function testCalculate(leftSide: number, operator: Operator, rightSide: number[], result: number): boolean {
+function testCalculate(leftSide: number | undefined, operator: Operator | undefined, rightSide: number[], result: number): boolean {
     // console.log(leftSide, operator, rightSide, result)
     if (rightSide.length === 0) {
         return leftSide === result
@@ -14,10 +14,14 @@ function testCalculate(leftSide: number, operator: Operator, rightSide: number[]
     const right = rightSide.pop()
     // console.log(right)
     if (right !== undefined) {
-        if (operator === Operator.Plus) {
+        if (leftSide === undefined) {
+            _tmp = right
+        } else if (operator === Operator.Plus) {
             _tmp = leftSide + right
         } else if (operator === Operator.Times) {
             _tmp = leftSide * right
+        } else if (operator === Operator.Concat) {
+            _tmp = parseInt(leftSide.toString() + right.toString())
         } else {
             throw new Error()
         }
@@ -27,7 +31,9 @@ function testCalculate(leftSide: number, operator: Operator, rightSide: number[]
             } else {
                 const res1 = testCalculate(_tmp, Operator.Plus, [...rightSide], result)
                 const res2 = testCalculate(_tmp, Operator.Times, [...rightSide], result)
-                return (res1 || res2)
+                const res3 = testCalculate(_tmp, Operator.Concat, [...rightSide], result)
+                // console.log(res1, res2, res3)
+                return (res1 || res2 || res3)
             }
         }
     }
@@ -41,13 +47,10 @@ for (const line of lines) {
     const _slice = parts.slice(1, undefined)
     // console.log(`Result: ${result} | Slice: ${_slice}`)
     const slice = _slice.map((value) => parseInt(value)).toReversed()
-    const leftSide = slice.pop()
-    const slicecpy = [...slice]
-    if (leftSide === undefined) throw new Error()
-    if (testCalculate(leftSide, Operator.Plus, slice, result) === true ||
-        testCalculate(leftSide, Operator.Times, slicecpy, result) === true) {
+    const res = testCalculate(undefined, undefined, slice, result)
+    if (res) {
         sum += result
     }
 }
 
-console.log(`Part 1: What is their total calibration result? ${sum}`)
+console.log(`What is their total calibration result? ${sum}`)

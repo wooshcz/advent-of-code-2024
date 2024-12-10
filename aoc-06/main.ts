@@ -93,21 +93,26 @@ class Guard {
 }
 
 function getObstacleCoords(guard: Guard) {
-    try {
-        switch (guard.facing) {
-            case Directions.Up:
-                return { x: guard.position.x, y: guard.position.y - 1 }
-            case Directions.Right:
-                return { x: guard.position.x + 1, y: guard.position.y }
-            case Directions.Down:
-                return { x: guard.position.x, y: guard.position.y + 1 }
-            case Directions.Left:
-                return { x: guard.position.x - 1, y: guard.position.y }
-            default:
-                throw Error("Unknown error in getObstacleCoords()")
-        }
-        // deno-lint-ignore no-explicit-any
-    } catch (_e: any) {
+    let out: XYCoords
+    switch (guard.facing) {
+        case Directions.Up:
+            out = { x: guard.position.x, y: guard.position.y - 1 }
+            break
+        case Directions.Right:
+            out = { x: guard.position.x + 1, y: guard.position.y }
+            break
+        case Directions.Down:
+            out = { x: guard.position.x, y: guard.position.y + 1 }
+            break
+        case Directions.Left:
+            out = { x: guard.position.x - 1, y: guard.position.y }
+            break
+        default:
+            out = { x: -1, y: -1 }
+    }
+    if (out.x < MAP_SIZE_X && out.x >= 0 && out.y < MAP_SIZE_Y && out.y >= 0) {
+        return out
+    } else {
         return undefined
     }
 }
@@ -162,8 +167,8 @@ function closesLoop(guard: Guard, map: string[][]): boolean {
             moveCount++
             // console.log(`Loop move counter: ${moveCount} | ${tempGuard.position.x}:${tempGuard.position.y} | ${guard.position.x}:${guard.position.y}`)
             const _histKey = JSON.stringify({ ...tempGuard.position, dir: tempGuard.facing })
-            if (tempGuard.history.includes(_histKey)) {
-                // console.log("Guard has reached the same square having the same orientation")
+            if (tempGuard.history.filter((value) => value === _histKey).length > 0) {
+                // console.log("Guard has reached the same square having the same orientation at least twice")
                 return true
             }
         }
@@ -174,26 +179,26 @@ function closesLoop(guard: Guard, map: string[][]): boolean {
 function walkThroughMap(guard: Guard, newObstacles: string[]): string[][] {
     let moveCount = 0
     while (guard.isInsideBoundary()) {
+        if (!guard.isFacingObstacle() && possibleLoop(guard, map)) {
+            // console.log("Possible loop detected!")
+            const newObstacle = getObstacleCoords(guard)
+            if (newObstacle !== undefined) {
+                const tempMap = JSON.parse(JSON.stringify(map))
+                tempMap[newObstacle.y][newObstacle.x] = OBSTACLE
+                if (closesLoop(guard, tempMap)) {
+                    // console.log(`Loop confirmed on move ${moveCount}!`)
+                    if (!newObstacles.includes(JSON.stringify(newObstacle))
+                        && JSON.stringify(newObstacle) !== JSON.stringify(guardCoord)) {
+                        newObstacles.push(JSON.stringify(newObstacle))
+                    }
+                } else {
+                    // console.log(`Loop was not confirmed, continue ...`)
+                }
+            }
+        }
         if (guard.isFacingObstacle()) {
             guard.turn()
         } else {
-            if (possibleLoop(guard, map)) {
-                // console.log("Possible loop detected!")
-                const newObstacle = getObstacleCoords(guard)
-                const tempMap = JSON.parse(JSON.stringify(map))
-                if (newObstacle !== undefined) {
-                    tempMap[newObstacle.y][newObstacle.x] = OBSTACLE
-                    if (closesLoop(guard, tempMap)) {
-                        // console.log(`Loop confirmed on move ${moveCount}!`)
-                        if (!newObstacles.includes(JSON.stringify(newObstacle))
-                            && JSON.stringify(newObstacle) !== JSON.stringify(guardCoord)) {
-                            newObstacles.push(JSON.stringify(newObstacle))
-                        }
-                    } else {
-                        // console.log(`Loop was not confirmed, continue ...`)
-                    }
-                }
-            }
             guard.move()
             moveCount++
             // console.log(`Main move counter: ${moveCount} | ${guard.position.x}:${guard.position.y}:${guard.facing}`)
@@ -219,8 +224,8 @@ for (let id = 0; id < lines.length; id++) {
 }
 
 const guard = new Guard(guardCoord, guardFacing, map)
-const newObstructions: string[] = []
-walkThroughMap(guard, newObstructions)
+const newObstacles: string[] = []
+walkThroughMap(guard, newObstacles)
 const historyPositions = []
 for (const _hist of guard.history) {
     historyPositions.push(JSON.stringify({ x: JSON.parse(_hist).x, y: JSON.parse(_hist).y }))
@@ -229,12 +234,12 @@ const distinctPositions = [... new Set(historyPositions)].length
 console.log(`Part 1: Number of distinct positions recorded: ${distinctPositions}`)
 
 // TODO: Still not correct :(
-console.log(`Part 2: Number of possible places for new obstructions that cause loops: ${newObstructions.length}`)
+console.log(`Part 2: Number of possible places for new obstructions that cause loops: ${newObstacles.length}`)
 
 for (const pos of historyPositions) {
     map[JSON.parse(pos).y][JSON.parse(pos).x] = "o"
 }
-for (const pos of newObstructions) {
+for (const pos of newObstacles) {
     map[JSON.parse(pos).y][JSON.parse(pos).x] = "@"
 }
 for (const row of map) {
