@@ -64,5 +64,46 @@ for (const fr of frequencies) {
     }
 }
 
-
 console.log(`Number of unique antinodes: ${antinodes.length}`)
+
+const antinodes_updated: Antinode[] = []
+for (const fr of frequencies) {
+    const antslice = antennas.filter((val) => { return val.freq === fr })
+    while (antslice.length > 0) {
+        const _ant1 = antslice.pop()
+        if (_ant1 === undefined) continue
+        for (const _ant2 of antslice) {
+            const _vec = { x: _ant1.pos.x - _ant2.pos.x, y: _ant1.pos.y - _ant2.pos.y }
+            // console.log(_ant1, _ant2, _vec)
+            let _cnt = 0
+            while (true) {
+                // console.log(`Counter: ${_cnt}`)
+                const an = { pos: { x: _ant1.pos.x + (_cnt * _vec.x), y: _ant1.pos.y + (_cnt * _vec.y) } }
+                if (isInsideBoundary(an.pos)) {
+                    if (antinodes_updated.filter((val) => val.pos.x === an.pos.x && val.pos.y === an.pos.y).length === 0) {
+                        antinodes_updated.push(an)
+                    }
+                    _cnt++
+                } else {
+                    break
+                }
+            }
+            _cnt = 0
+            while (true) {
+                // console.log(`Counter: ${_cnt}`)
+                const an = { pos: { x: _ant2.pos.x - (_cnt * _vec.x), y: _ant2.pos.y - (_cnt * _vec.y) } }
+                if (isInsideBoundary(an.pos)) {
+                    if (antinodes_updated.filter((val) => val.pos.x === an.pos.x && val.pos.y === an.pos.y).length === 0) {
+                        antinodes_updated.push(an)
+                    }
+                    _cnt++
+                } else {
+                    break
+                }
+            }
+        }
+    }
+}
+
+console.log(antinodes_updated)
+console.log(`Number of unique antinodes in the updated model: ${antinodes_updated.length}`)
