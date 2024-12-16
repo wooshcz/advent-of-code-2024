@@ -32,6 +32,7 @@ for (const char of diskmap) {
 
 // console.log(blockCount)
 // console.log(blocks)
+const blocks2: Block[] = [...blocks]
 
 let gaps: Block[] = []
 let pointer = blocks.length - 1
@@ -60,4 +61,38 @@ for (const blck of blocks) {
     cnt++
 }
 
-console.log(`What is the resulting filesystem checksum? ${checksum}`)
+console.log(`What is the resulting filesystem checksum? (part 1) ${checksum}`)
+
+
+for (let id = fileId - 1; id >= 0; id--) {
+    // console.log(blocks2)
+    const fileblocks = blocks2.filter((val) => val.id === id)
+    const fileblockStart = blocks2.findIndex((val) => val.id === id)
+    const freeSpace = blocks2.findIndex((_val, ind) => {
+        for (let j = ind, cnt = 0; cnt < fileblocks.length && j < fileblockStart; j++, cnt++) {
+            // console.log(j, blocks2[j])
+            if (blocks2[j].type !== "space") return false
+            else if (cnt === fileblocks.length - 1) return true
+        }
+        return false
+    })
+    if (freeSpace !== -1) {
+        for (let x = 0; x < fileblocks.length; x++) {
+            blocks2[freeSpace + x] = blocks2[fileblockStart + x]
+            blocks2[fileblockStart + x] = { type: "space" }
+        }
+        // console.log(`Moving file ID ${id} to ${freeSpace}`)
+    }
+    // console.log(fileblocks, freeSpace)
+}
+
+let checksum2 = 0
+let cnt2 = 0
+for (const blck of blocks2) {
+    if (blck.type === "file" && blck.id !== undefined) {
+        checksum2 += blck.id * cnt2
+    }
+    cnt2++
+}
+
+console.log(`What is the resulting filesystem checksum? (part 2) ${checksum2}`)
