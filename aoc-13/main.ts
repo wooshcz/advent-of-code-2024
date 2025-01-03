@@ -19,7 +19,7 @@ const _matches = [...file.matchAll(/Button A: X\+(\d+), Y\+(\d+)\nButton B: X\+(
 
 let tokens = 0
 for (const match of _matches) {
-    const _machine = {
+    const _machine: Machine = {
         AXinc: parseInt(match[1]),
         AYinc: parseInt(match[2]),
         BXinc: parseInt(match[3]),
