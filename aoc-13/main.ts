@@ -44,7 +44,7 @@ const PRIZE_INC = 10000000000000
 
 let tokens2 = 0
 for (const match of _matches) {
-    const _machine = {
+    const _machine: Machine = {
         AXinc: parseInt(match[1]),
         AYinc: parseInt(match[2]),
         BXinc: parseInt(match[3]),
